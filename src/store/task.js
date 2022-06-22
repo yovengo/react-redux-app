@@ -1,40 +1,60 @@
-const TASK_UPDATED = "task/updated"
-const TASK_DELETED = "task/deleted"
+import {createSlice} from "@reduxjs/toolkit";
+import todosService from "../services/todos.service";
+import {setError} from "./errors";
 
-export function taskCompleted(id) {
-    return {
-        type: TASK_UPDATED,
-        payload: {id: id, completed: true},
+const initialState = {entities: [], isLoading: true}
+
+const taskSlice = createSlice({
+        name: "task", initialState, reducers: {
+            received(state, action) {
+                state.entities = action.payload
+                state.isLoading = false
+            },
+            update(state, action) {
+                const elementIndex = state.entities.findIndex(el => el.id === action.payload?.id)
+                state.entities[elementIndex] = {...state.entities[elementIndex], ...action.payload}
+            },
+            remove(state, action) {
+                state.entities = state.entities.filter(
+                    (el) => el.id !== action.payload.id
+                );
+            },
+            taskRequested(state) {
+                state.isLoading = true
+            },
+            taskRequestFailed(state) {
+                state.isLoading = false
+            }
+        }
     }
+)
+const {actions, reducer: taskReducer} = taskSlice
+const {update, remove, received, taskRequested, taskRequestFailed} = actions
+
+export const loadTasks = () => async (dispatch) => {
+    dispatch(taskRequested())
+    try {
+        const data = await todosService.fetch()
+        dispatch(received(data))
+    } catch (error) {
+        dispatch(taskRequestFailed())
+        dispatch(setError(error.message))
+    }
+}
+
+export const completeTask = (id) => (dispatch) => {
+    dispatch(update({id: id, completed: true}))
 }
 
 export function titleChanged(id) {
-    return {
-        type: TASK_UPDATED,
-        payload: {id: id, title: `New title for ${id}`},
-    }
+    return update({id: id, title: `New title for ${id}`})
 }
 
 export function taskDeleted(id) {
-    return {
-        type: TASK_DELETED,
-        payload: {id}
-    }
+    return remove({id})
 }
 
-function reducer(state=[], action) {
-    switch (action.type) {
-        case TASK_UPDATED: {
-            const newArray = [...state]
-            const elementIndex = newArray.findIndex(el => el.id === action.payload.id)
-            newArray[elementIndex]={...newArray[elementIndex], ...action.payload}
-            return newArray
-        }
-        case TASK_DELETED: {
-            return state.filter(el => el.id !== action.payload.id)
-        }
-        default:
-            return state;
-    }
-}
-export default reducer
+export const getTasks = () => (state) => state.tasks.entities
+export const getTasksLoadingStatus = () => (state) => state.tasks.isLoading
+
+export default taskReducer
