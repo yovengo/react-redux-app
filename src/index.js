@@ -1,7 +1,15 @@
 import React, {useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import configureStore from "./store/store";
-import {completeTask, getTasks, taskDeleted, titleChanged, loadTasks, getTasksLoadingStatus} from './store/task'
+import {
+    completeTask,
+    createTask,
+    getTasks,
+    getTasksLoadingStatus,
+    loadTasks,
+    taskDeleted,
+    titleChanged
+} from './store/task'
 import {Provider, useDispatch, useSelector} from "react-redux";
 import {getError} from "./store/errors";
 
@@ -28,7 +36,7 @@ const App = () => {
         dispatch(taskDeleted(taskId))
     }
 
-    if(isLoading){
+    if (isLoading) {
         return <h1>Loading...</h1>
     }
     if (error) {
@@ -48,6 +56,7 @@ const App = () => {
                     <hr/>
                 </li>)}
             </ul>
+            <button onClick={() => dispatch(createTask({title: 'Add "add method"', completed: false}))}>Создать задачу</button>
         </>
     )
 }
